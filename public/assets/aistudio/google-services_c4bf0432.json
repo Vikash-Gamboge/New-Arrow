@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "182358986427",
+    "project_id": "arrow-master-b80bc",
+    "storage_bucket": "arrow-master-b80bc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:182358986427:android:caa630b2827a2b2926a39e",
+        "android_client_info": {
+          "package_name": "com.vikashgamboge.arrowmaster"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDgdrRQxChAMYFjTRY71k8D128LahjSzP0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,136 @@
+name: Build Android APK & AAB (Amazon & Google Play)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Multi-Flavor Android Releases
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: |
+          npm config set legacy-peer-deps true
+          npm install --legacy-peer-deps
+          if [ ! -d "node_modules/@capacitor/core" ] || [ ! -d "node_modules/@capacitor/android" ] || [ ! -d "node_modules/@capacitor/cli" ]; then
+            npm install @capacitor/core @capacitor/cli @capacitor/android --legacy-peer-deps
+          fi
+
+      - name: Run Lint & TypeScript Checks
+        run: |
+          npm run lint
+
+      - name: Run Level Solvability Tests
+        run: |
+          npm test
+
+      - name: Build web application
+        run: npm run build
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Verify Java environment
+        run: |
+          java -version
+          echo "JAVA_HOME: $JAVA_HOME"
+
+      - name: Configure Android SDK
+        run: |
+          echo "Using pre-installed Android SDK at $ANDROID_HOME"
+          yes | sdkmanager --licenses 2>/dev/null || true
+
+      - name: Synchronize Capacitor Android Assets
+        run: |
+          # Sync web assets without deleting custom native Java plugins or Gradle configs
+          npx cap sync android
+
+      - name: Build Amazon & Google Play Packages
+        run: |
+          cd android
+          chmod +x gradlew
+          # Build Amazon Release & Debug APKs (No AdMob, No Google Services, Content Policy Compliant)
+          ./gradlew assembleAmazonRelease assembleAmazonDebug --stacktrace --no-daemon
+          
+          # Build Google Play Release APK & AAB + Debug APK (With Unity Ads & Optional AdMob)
+          ./gradlew assembleGoogleRelease bundleGoogleRelease assembleGoogleDebug --stacktrace --no-daemon
+
+      - name: Verify Generated Outputs
+        run: |
+          echo "Listing all generated APK and AAB outputs:"
+          find android/app/build/outputs/ -type f \( -name "*.apk" -o -name "*.aab" \) -ls
+
+      - name: Prepare Artifact Package Directory
+        id: prep_assets
+        run: |
+          mkdir -p build_artifacts/amazon build_artifacts/google
+          
+          # Amazon outputs
+          find android/app/build/outputs/apk/amazon/ -name "*.apk" -exec cp {} build_artifacts/amazon/ \; || true
+          # Google outputs
+          find android/app/build/outputs/apk/google/ -name "*.apk" -exec cp {} build_artifacts/google/ \; || true
+          find android/app/build/outputs/bundle/ -name "*.aab" -exec cp {} build_artifacts/google/ \; || true
+          
+          ls -la build_artifacts/amazon/
+          ls -la build_artifacts/google/
+
+      - name: Upload Amazon Release APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: amazon-store-apks
+          path: build_artifacts/amazon/
+          if-no-files-found: warn
+
+      - name: Upload Google Play Packages (APK & AAB)
+        uses: actions/upload-artifact@v4
+        with:
+          name: google-play-packages
+          path: build_artifacts/google/
+          if-no-files-found: warn
+
+      - name: Publish Release to GitHub Releases
+        id: create_release
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG_NAME="release-build-${{ github.run_number }}-${{ github.run_attempt }}"
+          RELEASE_TITLE="Arrow Master Build #${{ github.run_number }} (Amazon & Google Play)"
+          
+          gh release create "$TAG_NAME" \
+            build_artifacts/amazon/* \
+            build_artifacts/google/* \
+            --title "$RELEASE_TITLE" \
+            --notes "Automated release build for Arrow Master : Puzzle Escape.
+            - Amazon Appstore Build: Unity Ads active, AdMob and Google Play Services excluded for Amazon Content Policy compliance.
+            - Google Play Build: Unity Ads active, AdMob ready, AAB bundle + APK.
+            
+            Run Number: ${{ github.run_number }}
+            Commit: ${{ github.sha }}" \
+            --latest
+
+      - name: Report Build Summary
+        if: always()
+        run: |
+          echo "### 🚀 ARROW MASTER BUILD SUMMARY" >> $GITHUB_STEP_SUMMARY
+          echo "- **Amazon Flavor**: Clean APK built without AdMob/Google Play Services. Unity Ads enabled." >> $GITHUB_STEP_SUMMARY
+          echo "- **Google Play Flavor**: APK and AAB built with Unity Ads and optional AdMob." >> $GITHUB_STEP_SUMMARY
+          echo "- **Artifacts**: Downloadable from GitHub Actions artifacts and GitHub Releases." >> $GITHUB_STEP_SUMMARY

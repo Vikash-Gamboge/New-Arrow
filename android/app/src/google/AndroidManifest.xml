@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Google Play Advertising ID for targeted ad mediation and attribution on Google Play -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
+
+    <application>
+        <!-- Optional AdMob Application ID (required when Google Mobile Ads SDK is compiled) -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${admobAppId}" />
+    </application>
+
+</manifest>

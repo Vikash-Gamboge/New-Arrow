@@ -1,0 +1,144 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace = "com.vikashgamboge.arrowmaster"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.vikashgamboge.arrowmaster"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 15
+        versionName "15.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~:aistudio:*.apk:*.aab:*.jks:*.keystore:*.p12:*.pepk:keystore.properties:*keystores*'
+        }
+    }
+    def keystorePropertiesFile = rootProject.file('keystore.properties')
+    def keystoreProperties = new Properties()
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    }
+
+    def resolveKeystore = { path ->
+        if (!path) return null
+        def f = file(path)
+        if (f.exists()) return f
+        f = rootProject.file(path)
+        if (f.exists()) return f
+        f = rootProject.file("keystores/" + new File(path).name)
+        if (f.exists()) return f
+        return null
+    }
+
+    signingConfigs {
+        amazonRelease {
+            def storeFilePath = keystoreProperties.getProperty('AMAZON_KEYSTORE_FILE') ?: System.getenv('AMAZON_KEYSTORE_FILE')
+            def resolvedFile = resolveKeystore(storeFilePath)
+            if (resolvedFile != null) {
+                storeFile resolvedFile
+                storePassword keystoreProperties.getProperty('AMAZON_KEYSTORE_PASSWORD') ?: System.getenv('AMAZON_KEYSTORE_PASSWORD')
+                keyAlias keystoreProperties.getProperty('AMAZON_KEY_ALIAS') ?: System.getenv('AMAZON_KEY_ALIAS')
+                keyPassword keystoreProperties.getProperty('AMAZON_KEY_PASSWORD') ?: System.getenv('AMAZON_KEY_PASSWORD')
+            }
+        }
+        googleRelease {
+            def storeFilePath = keystoreProperties.getProperty('GOOGLE_KEYSTORE_FILE') ?: System.getenv('GOOGLE_KEYSTORE_FILE')
+            def resolvedFile = resolveKeystore(storeFilePath)
+            if (resolvedFile != null) {
+                storeFile resolvedFile
+                storePassword keystoreProperties.getProperty('GOOGLE_KEYSTORE_PASSWORD') ?: System.getenv('GOOGLE_KEYSTORE_PASSWORD')
+                keyAlias keystoreProperties.getProperty('GOOGLE_KEY_ALIAS') ?: System.getenv('GOOGLE_KEY_ALIAS')
+                keyPassword keystoreProperties.getProperty('GOOGLE_KEY_PASSWORD') ?: System.getenv('GOOGLE_KEY_PASSWORD')
+            }
+        }
+    }
+
+    flavorDimensions = ["store"]
+    productFlavors {
+        amazon {
+            dimension "store"
+            applicationId "com.vikashgamboge.arrowmaster"
+            manifestPlaceholders = [
+                appName: "Arrow Master: Puzzle Escape"
+            ]
+            if (signingConfigs.amazonRelease.storeFile != null) {
+                signingConfig signingConfigs.amazonRelease
+            }
+        }
+        google {
+            dimension "store"
+            applicationId "com.vikashgamboge.arrowmaster"
+            manifestPlaceholders = [
+                appName: "Arrow Master: Puzzle Escape",
+                admobAppId: "ca-app-pub-3940256099942544~3347511713" // Official Google Test App ID (replace with production in Play Console)
+            ]
+            if (signingConfigs.googleRelease.storeFile != null) {
+                signingConfig signingConfigs.googleRelease
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+
+    // Unity Ads SDK (Maintained for both Amazon Appstore and Google Play)
+    implementation 'com.unity3d.ads:unity-ads:4.15.0'
+
+    // Google Play Exclusive Dependencies (Excluded from Amazon build to pass Amazon Content Policy)
+    googleImplementation "com.google.android.gms:play-services-ads:23.6.0"
+}
+
+apply from: 'capacitor.build.gradle'
+
+afterEvaluate {
+    def ensureUnityAdsPlugin = tasks.register("ensureUnityAdsPluginRegistered") {
+        doLast {
+            def pluginsFile = file("src/main/assets/capacitor.plugins.json")
+            if (pluginsFile.exists()) {
+                def content = pluginsFile.getText("UTF-8")
+                if (!content.contains("com.vikashgamboge.arrowmaster.UnityAdsPlugin")) {
+                    def jsonSlurper = new groovy.json.JsonSlurper()
+                    def list = jsonSlurper.parseText(content) as List
+                    def updated = [
+                        [
+                            pkg: "UnityAdsPlugin",
+                            classpath: "com.vikashgamboge.arrowmaster.UnityAdsPlugin"
+                        ]
+                    ] + list
+                    pluginsFile.write(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(updated)) + "\n", "UTF-8")
+                    logger.lifecycle("Registered UnityAdsPlugin in src/main/assets/capacitor.plugins.json")
+                }
+            }
+        }
+    }
+
+    tasks.matching {
+        it.name.startsWith("merge") && it.name.endsWith("Assets") || it.name == "preBuild"
+    }.configureEach {
+        dependsOn(ensureUnityAdsPlugin)
+    }
+}
+

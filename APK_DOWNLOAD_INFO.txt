@@ -1,0 +1,52 @@
+===================================================================
+ARROW MASTER : PUZZLE ESCAPE - OFFICIAL RELEASE & SIGNING METRICS
+===================================================================
+
+1. DELIVERABLES SUMMARY
+-------------------------------------------------------------------
+A. Amazon Appstore Release APK (Primary Deliverable):
+   - File Path: public/downloads/arrow-master-amazon-release.apk
+   - Direct Download: /arrow-master-amazon-release.apk (or /download)
+   - Size: 7.64 MB (8,006,151 bytes)
+   - Package Name: com.vikashgamboge.arrowmaster
+   - Version: 15.0 (versionCode 15)
+   - Min SDK: 24 (Android 7.0+) | Target SDK: 36 (Android 14/15+)
+   - Signature: APK Signature Scheme v2 (RSA 2048-bit, SHA384withRSA)
+   - Certificate SHA-256: b22df6e8c242f946ad28e655d0f020fe4bb0302656e974c6bca063d982cedc1e
+   - Policy Status: Complies with Amazon Content & Privacy Policy.
+     Excludes AdMob and unnecessary Google Play Services.
+     Unity Ads 4.15.0 active with Rewarded & Interstitial placements.
+
+B. Google Play Console Release AAB (Android App Bundle):
+   - File Path: public/downloads/arrow-master-google-release.aab
+   - Direct Download: /arrow-master-google-release.aab
+   - Size: 9.27 MB (9,723,301 bytes)
+   - Package Name: com.vikashgamboge.arrowmaster
+   - Version: 15.0 (versionCode 15)
+   - Target SDK: 36 (Android 14/15+)
+   - Signature: Signed with Google Play Upload Key (RSA 2048-bit)
+   - Certificate SHA-256: c987f88ec9267ae08c8b1d32e19b89fa67207f5ab3e7e110a9c261768fff8377
+   - Verification: Verified via jarsigner (JAR verified, signed by Arrow Master Studio)
+
+C. Google Play Local Test APK:
+   - File Path: public/downloads/arrow-master-google-release.apk
+   - Direct Download: /arrow-master-google-release.apk
+   - Size: 9.55 MB (10,016,926 bytes)
+   - Package Name: com.vikashgamboge.arrowmaster
+   - Version: 15.0 (versionCode 15)
+   - Signature: APK Signature Scheme v2 (RSA 2048-bit)
+
+2. SECURE KEYSTORE STORAGE & BACKUP
+-------------------------------------------------------------------
+- Keystore directory: android/keystores/ (ignored by git in .gitignore)
+- Configuration: android/keystore.properties (ignored by git in .gitignore)
+- Configuration Template: android/keystore.properties.example
+- Downloadable Backup Archive: /arrow-master-keystores-backup.tar.gz
+
+How to backup your keystore offline:
+1. Download arrow-master-keystores-backup.tar.gz immediately.
+2. Extract and store the `.jks` keystore files and `keystore.properties` on an encrypted, secure drive (e.g., password manager, hardware drive).
+3. NEVER commit `.jks`, `.keystore`, or `keystore.properties` files to public Git repositories.
+4. If you lose your Amazon release keystore, Amazon Appstore cannot recover it and you cannot update your game.
+5. For Google Play, if you ever lose your upload key, you can reset it via Google Play Console support using Google Play App Signing.
+===================================================================

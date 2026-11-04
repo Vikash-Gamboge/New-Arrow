@@ -1,0 +1,19 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Android signing keys & credentials
+*.jks
+*.keystore
+*.p12
+*.pepk
+keystore.properties
+signing.properties
+android/keystores/
+android/keystores-backup/
+*keystores*.tar.gz

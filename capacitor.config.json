@@ -1,0 +1,9 @@
+{
+  "appId": "com.vikashgamboge.arrowmaster",
+  "appName": "Arrow Master: Puzzle Escape",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}
